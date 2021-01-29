@@ -83,16 +83,6 @@ public class FloatingActionButton extends View {
 		return super.onTouchEvent(event);
 	}
 
-	@Override
-	public String toString() {
-		String str = "Width: " + getWidth() + ", Height: " + getHeight();
-		if (mBitmap != null) {
-			str += ", Bitmap Width: " + mBitmap.getWidth() + ", Bitmap Height: " + mBitmap.getHeight();
-			str += ", PositionX: " + ((getWidth() - mBitmap.getWidth()) / 2) + ", PositionY: " + ((getHeight() - mBitmap.getHeight()) / 2);
-		}
-		return str;
-	}
-
 	public void hideFloatingActionButton() {
 		if (!mHidden) {
 			ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, "scaleX", 1, 0);
