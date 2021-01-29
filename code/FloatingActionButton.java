@@ -27,7 +27,7 @@ public class FloatingActionButton extends View {
 	Paint mDrawablePaint;
 	Bitmap mBitmap;
 	boolean mHidden = false;
-	int scaleFactor = 4;
+	float scaleFactor = 3.5f;
 
 	public FloatingActionButton(Context context) {
 		super(context);
@@ -38,7 +38,7 @@ public class FloatingActionButton extends View {
 	/*
 	 * Custom scale
 	 */
-	public void setScaleFactor(int scale) {
+	public void setScaleFactor(float scale) {
 		this.scaleFactor = scale;
 	}
 
@@ -67,8 +67,8 @@ public class FloatingActionButton extends View {
 		setClickable(true);
 		canvas.drawCircle(getWidth() / 2, getHeight() / 2, (float) (getWidth() / 2.6), mButtonPaint);
 		// Rect src = new Rect(0, 0, mBitmap.getWidth(), mBitmap.getHeight());
-		int pWidth = getWidth() / scaleFactor;
-		int pHeight = getWidth() / scaleFactor;
+		float pWidth = getWidth() / scaleFactor;
+		float pHeight = getWidth() / scaleFactor;
 		RectF dest = new RectF(pWidth, pHeight, getWidth() - pWidth, getHeight() - pHeight);
 		canvas.drawBitmap(mBitmap, null, dest, mDrawablePaint);
 	}
