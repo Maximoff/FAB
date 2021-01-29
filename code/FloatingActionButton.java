@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.Gravity;
@@ -19,170 +20,186 @@ import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 
 public class FloatingActionButton extends View {
+	final static OvershootInterpolator overshootInterpolator = new OvershootInterpolator();
+	final static AccelerateInterpolator accelerateInterpolator = new AccelerateInterpolator();
+	Context context;
+	Paint mButtonPaint;
+	Paint mDrawablePaint;
+	Bitmap mBitmap;
+	boolean mHidden = false;
+	int scaleFactor = 4;
 
-  final static OvershootInterpolator overshootInterpolator = new OvershootInterpolator();
-  final static AccelerateInterpolator accelerateInterpolator = new AccelerateInterpolator();
+	public FloatingActionButton(Context context) {
+		super(context);
+		this.context = context;
+		init(Color.WHITE);
+	}
 
-  Context context;
-  Paint mButtonPaint;
-  Paint mDrawablePaint;
-  Bitmap mBitmap;
-  boolean mHidden = false;
+	/*
+	 * Custom scale
+	 */
+	public void setScaleFactor(int scale) {
+		this.scaleFactor = scale;
+	}
 
-  public FloatingActionButton(Context context) {
-    super(context);
-    this.context = context;
-    init(Color.WHITE);
-  }
+	public void setFloatingActionButtonColor(int FloatingActionButtonColor) {
+		init(FloatingActionButtonColor);
+	}
 
-  public void setFloatingActionButtonColor(int FloatingActionButtonColor) {
-    init(FloatingActionButtonColor);
-  }
+	public void setFloatingActionButtonDrawable(Drawable FloatingActionButtonDrawable) {
+		mBitmap = ((BitmapDrawable) FloatingActionButtonDrawable).getBitmap();
+		invalidate();
+	}
 
-  public void setFloatingActionButtonDrawable(Drawable FloatingActionButtonDrawable) {
-    mBitmap = ((BitmapDrawable) FloatingActionButtonDrawable).getBitmap();
-    invalidate();
-  }
+	public void init(int FloatingActionButtonColor) {
+		setWillNotDraw(false);
+		setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+		mButtonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		mButtonPaint.setColor(FloatingActionButtonColor);
+		mButtonPaint.setStyle(Paint.Style.FILL);
+		mButtonPaint.setShadowLayer(10.0f, 0.0f, 3.5f, Color.argb(100, 0, 0, 0));
+		mDrawablePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		invalidate();
+	}
 
-  public void init(int FloatingActionButtonColor) {
-    setWillNotDraw(false);
-    setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+	@Override
+	protected void onDraw(Canvas canvas) {
+		setClickable(true);
+		canvas.drawCircle(getWidth() / 2, getHeight() / 2, (float) (getWidth() / 2.6), mButtonPaint);
+		// Rect src = new Rect(0, 0, mBitmap.getWidth(), mBitmap.getHeight());
+		int pWidth = getWidth() / scaleFactor;
+		int pHeight = getWidth() / scaleFactor;
+		RectF dest = new RectF(pWidth, pHeight, getWidth() - pWidth, getHeight() - pHeight);
+		canvas.drawBitmap(mBitmap, null, dest, mDrawablePaint);
+	}
 
-    mButtonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    mButtonPaint.setColor(FloatingActionButtonColor);
-    mButtonPaint.setStyle(Paint.Style.FILL);
-    mButtonPaint.setShadowLayer(10.0f, 0.0f, 3.5f, Color.argb(100, 0, 0, 0));
-    mDrawablePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_UP) {
+			setAlpha(1.0f);
+		} else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			setAlpha(0.6f);
+		}
+		return super.onTouchEvent(event);
+	}
 
-    invalidate();
-  }
+	@Override
+	public String toString() {
+		String str = "Width: " + getWidth() + ", Height: " + getHeight();
+		if (mBitmap != null) {
+			str += ", Bitmap Width: " + mBitmap.getWidth() + ", Bitmap Height: " + mBitmap.getHeight();
+			str += ", PositionX: " + ((getWidth() - mBitmap.getWidth()) / 2) + ", PositionY: " + ((getHeight() - mBitmap.getHeight()) / 2);
+		}
+		return str;
+	}
 
-  @Override
-  protected void onDraw(Canvas canvas) {
-    setClickable(true);
-    canvas.drawCircle(getWidth() / 2, getHeight() / 2, (float) (getWidth() / 2.6), mButtonPaint);
-    canvas.drawBitmap(mBitmap, (getWidth() - mBitmap.getWidth()) / 2,
-        (getHeight() - mBitmap.getHeight()) / 2, mDrawablePaint);
-  }
+	public void hideFloatingActionButton() {
+		if (!mHidden) {
+			ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, "scaleX", 1, 0);
+			ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, "scaleY", 1, 0);
+			AnimatorSet animSetXY = new AnimatorSet();
+			animSetXY.playTogether(scaleX, scaleY);
+			animSetXY.setInterpolator(accelerateInterpolator);
+			animSetXY.setDuration(100);
+			animSetXY.start();
+			mHidden = true;
+		}
+	}
 
-  @Override
-  public boolean onTouchEvent(MotionEvent event) {
-    if (event.getAction() == MotionEvent.ACTION_UP) {
-      setAlpha(1.0f);
-    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-      setAlpha(0.6f);
-    }
-    return super.onTouchEvent(event);
-  }
+	public void showFloatingActionButton() {
+		if (mHidden) {
+			ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, "scaleX", 0, 1);
+			ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, "scaleY", 0, 1);
+			AnimatorSet animSetXY = new AnimatorSet();
+			animSetXY.playTogether(scaleX, scaleY);
+			animSetXY.setInterpolator(overshootInterpolator);
+			animSetXY.setDuration(200);
+			animSetXY.start();
+			mHidden = false;
+		}
+	}
 
-  public void hideFloatingActionButton() {
-    if (!mHidden) {
-      ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, "scaleX", 1, 0);
-      ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, "scaleY", 1, 0);
-      AnimatorSet animSetXY = new AnimatorSet();
-      animSetXY.playTogether(scaleX, scaleY);
-      animSetXY.setInterpolator(accelerateInterpolator);
-      animSetXY.setDuration(100);
-      animSetXY.start();
-      mHidden = true;
-    }
-  }
+	public boolean isHidden() {
+		return mHidden;
+	}
 
-  public void showFloatingActionButton() {
-    if (mHidden) {
-      ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, "scaleX", 0, 1);
-      ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, "scaleY", 0, 1);
-      AnimatorSet animSetXY = new AnimatorSet();
-      animSetXY.playTogether(scaleX, scaleY);
-      animSetXY.setInterpolator(overshootInterpolator);
-      animSetXY.setDuration(200);
-      animSetXY.start();
-      mHidden = false;
-    }
-  }
+	static public class Builder {
+		private FrameLayout.LayoutParams params;
+		private final Activity activity;
+		int gravity = Gravity.BOTTOM | Gravity.RIGHT; // default bottom right
+		Drawable drawable;
+		int color = Color.WHITE;
+		int size = 0;
+		float scale = 0;
 
-  public boolean isHidden() {
-    return mHidden;
-  }
+		public Builder(Activity context) {
+			scale = context.getResources().getDisplayMetrics().density;
+			size = convertToPixels(72, scale); // default size is 72dp by 72dp
+			params = new FrameLayout.LayoutParams(size, size);
+			params.gravity = gravity;
+			this.activity = context;
+		}
 
-  static public class Builder {
-    private FrameLayout.LayoutParams params;
-    private final Activity activity;
-    int gravity = Gravity.BOTTOM | Gravity.RIGHT; // default bottom right
-    Drawable drawable;
-    int color = Color.WHITE;
-    int size = 0;
-    float scale = 0;
+		/**
+		 * Sets the gravity for the FAB
+		 */
+		public Builder withGravity(int gravity) {
+			this.gravity = gravity;
+			return this;
+		}
 
-    public Builder(Activity context) {
-      scale = context.getResources().getDisplayMetrics().density;
-      size = convertToPixels(72, scale); // default size is 72dp by 72dp
-      params = new FrameLayout.LayoutParams(size, size);
-      params.gravity = gravity;
+		/**
+		 * Sets the margins for the FAB in dp
+		 */
+		public Builder withMargins(int left, int top, int right, int bottom) {
+			params.setMargins(
+				convertToPixels(left, scale),
+				convertToPixels(top, scale),
+				convertToPixels(right, scale),
+				convertToPixels(bottom, scale));
+			return this;
+		}
 
-      this.activity = context;
-    }
+		/**
+		 * Sets the FAB drawable
+		 */
+		public Builder withDrawable(final Drawable drawable) {
+			this.drawable = drawable;
+			return this;
+		}
 
-    /**
-     * Sets the gravity for the FAB
-     */
-    public Builder withGravity(int gravity) {
-      this.gravity = gravity;
-      return this;
-    }
+		/**
+		 * Sets the FAB color
+		 */
+		public Builder withButtonColor(final int color) {
+			this.color = color;
+			return this;
+		}
 
-    /**
-     * Sets the margins for the FAB in dp
-     */
-    public Builder withMargins(int left, int top, int right, int bottom) {
-      params.setMargins(
-          convertToPixels(left, scale),
-          convertToPixels(top, scale),
-          convertToPixels(right, scale),
-          convertToPixels(bottom, scale));
-      return this;
-    }
+		/**
+		 * Sets the FAB size in dp
+		 */
+		public Builder withButtonSize(int size) {
+			size = convertToPixels(size, scale);
+			params = new FrameLayout.LayoutParams(size, size);
+			return this;
+		}
 
-    /**
-     * Sets the FAB drawable
-     */
-    public Builder withDrawable(final Drawable drawable) {
-      this.drawable = drawable;
-      return this;
-    }
+		public FloatingActionButton create() {
+			final FloatingActionButton button = new FloatingActionButton(activity);
+			button.setFloatingActionButtonColor(this.color);
+			button.setFloatingActionButtonDrawable(this.drawable);
+			params.gravity = this.gravity;
+			ViewGroup root = (ViewGroup) activity.findViewById(android.R.id.content);
+			root.addView(button, params);
+			return button;
+		}
 
-    /**
-     * Sets the FAB color
-     */
-    public Builder withButtonColor(final int color) {
-      this.color = color;
-      return this;
-    }
-
-    /**
-     * Sets the FAB size in dp
-     */
-    public Builder withButtonSize(int size) {
-      size = convertToPixels(size, scale);
-      params = new FrameLayout.LayoutParams(size, size);
-      return this;
-    }
-
-    public FloatingActionButton create() {
-      final FloatingActionButton button = new FloatingActionButton(activity);
-      button.setFloatingActionButtonColor(this.color);
-      button.setFloatingActionButtonDrawable(this.drawable);
-      params.gravity = this.gravity;
-      ViewGroup root = (ViewGroup) activity.findViewById(android.R.id.content);
-      root.addView(button, params);
-      return button;
-    }
-
-    // The calculation (value * scale + 0.5f) is a widely used to convert to dps to pixel units
-    // based on density scale
-    // see developer.android.com (Supporting Multiple Screen Sizes)
-    private int convertToPixels(int dp, float scale){
-      return (int) (dp * scale + 0.5f) ;
-    }
-  }
+		// The calculation (value * scale + 0.5f) is a widely used to convert to dps to pixel units
+		// based on density scale
+		// see developer.android.com (Supporting Multiple Screen Sizes)
+		private int convertToPixels(int dp, float scale) {
+			return (int) (dp * scale + 0.5f) ;
+		}
+	}
 }
