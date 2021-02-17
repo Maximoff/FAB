@@ -92,13 +92,14 @@ public class FloatingActionButton extends View {
 			animSetXY.setInterpolator(accelerateInterpolator);
 			animSetXY.setDuration(100);
 			animSetXY.start();
-			setVisibility(View.GONE);
 			mHidden = true;
+			setVisibility(View.GONE);
 		}
 	}
 
 	public void showFloatingActionButton() {
 		if (mHidden) {
+			setVisibility(View.VISIBLE);
 			ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, "scaleX", 0, 1);
 			ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, "scaleY", 0, 1);
 			AnimatorSet animSetXY = new AnimatorSet();
@@ -106,7 +107,6 @@ public class FloatingActionButton extends View {
 			animSetXY.setInterpolator(overshootInterpolator);
 			animSetXY.setDuration(200);
 			animSetXY.start();
-			setVisibility(View.VISIBLE);
 			mHidden = false;
 		}
 	}
